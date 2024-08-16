@@ -1,6 +1,6 @@
 USE [IndustryConnectWeek2]
 GO
-/****** Object:  UserDefinedFunction [dbo].[GetCustomerAmount]    Script Date: 03/06/2024 16:21:03 ******/
+/****** Object:  UserDefinedFunction [dbo].[GetCustomerAmount]    Script Date: 17/8/2024 08:28:44 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -16,7 +16,7 @@ return (select sum(price) from CustomerSales where [Customer Id] = @CustomerId);
 --return @amount
 end
 GO
-/****** Object:  Table [dbo].[Customer]    Script Date: 03/06/2024 16:21:03 ******/
+/****** Object:  Table [dbo].[Customer]    Script Date: 17/8/2024 08:30:41 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -32,7 +32,7 @@ CREATE TABLE [dbo].[Customer](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Product]    Script Date: 03/06/2024 16:21:03 ******/
+/****** Object:  Table [dbo].[Product]    Script Date: 17/8/2024 08:32:02 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -49,7 +49,7 @@ CREATE TABLE [dbo].[Product](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Sale]    Script Date: 03/06/2024 16:21:03 ******/
+/****** Object:  Table [dbo].[Sale]    Script Date: 17/8/2024 08:42:42 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -59,20 +59,37 @@ CREATE TABLE [dbo].[Sale](
 	[CustomerId] [int] NULL,
 	[ProductId] [int] NULL,
 	[DateSold] [datetime] NULL,
+	[StoreId] [int] NULL,
  CONSTRAINT [PK_Sale] PRIMARY KEY CLUSTERED 
 (
 	[Id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+GO/****** Object:  Table [dbo].[Store]    Script Date: 17/8/2024 08:44:44 ******/
+SET ANSI_NULLS ON
 GO
-/****** Object:  View [dbo].[CustomerSales]    Script Date: 03/06/2024 16:21:03 ******/
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[Store](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Name] [nvarchar](50) NULL,
+	[Location] [nvarchar](50) NULL,
+ CONSTRAINT [PK_Store] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[CustomerSales]    Script Date: 17/8/2024 08:45:29 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE view [dbo].[CustomerSales]
 as
-select c.Id as 'Customer Id', c.FirstName, c.LastName, s.DateSold, p.[Name], p.Price
+select c.Id as 'Customer Id', c.FirstName, c.LastName, (c.FirstName + ' ' + c.LastName) as 'Full Name', s.DateSold, p.[Name], p.Price
 , [dbo].[GetCustomerAmount](c.Id) as 'Total Purchases'
 	from Customer c
 		left join 
@@ -106,11 +123,11 @@ SET IDENTITY_INSERT [dbo].[Product] OFF
 GO
 SET IDENTITY_INSERT [dbo].[Sale] ON 
 GO
-INSERT [dbo].[Sale] ([Id], [CustomerId], [ProductId], [DateSold]) VALUES (1, 1, 2, CAST(N'2024-06-03T00:00:00.000' AS DateTime))
+INSERT [dbo].[Sale] ([Id], [CustomerId], [ProductId], [DateSold], [StoreId]) VALUES (1, 1, 2, CAST(N'2024-06-03T00:00:00.000' AS DateTime), NULL)
 GO
-INSERT [dbo].[Sale] ([Id], [CustomerId], [ProductId], [DateSold]) VALUES (2, 2, 1, CAST(N'2024-06-03T00:00:00.000' AS DateTime))
+INSERT [dbo].[Sale] ([Id], [CustomerId], [ProductId], [DateSold], [StoreId]) VALUES (2, 2, 1, CAST(N'2024-06-03T00:00:00.000' AS DateTime), NULL)
 GO
-INSERT [dbo].[Sale] ([Id], [CustomerId], [ProductId], [DateSold]) VALUES (3, 1, 3, CAST(N'2024-06-03T00:00:00.000' AS DateTime))
+INSERT [dbo].[Sale] ([Id], [CustomerId], [ProductId], [DateSold], [StoreId]) VALUES (3, 1, 3, CAST(N'2024-06-03T00:00:00.000' AS DateTime), NULL)
 GO
 SET IDENTITY_INSERT [dbo].[Sale] OFF
 GO
@@ -124,7 +141,12 @@ REFERENCES [dbo].[Product] ([Id])
 GO
 ALTER TABLE [dbo].[Sale] CHECK CONSTRAINT [FK_Sale_Product]
 GO
-/****** Object:  StoredProcedure [dbo].[InsertProduct]    Script Date: 03/06/2024 16:21:03 ******/
+ALTER TABLE [dbo].[Sale]  WITH CHECK ADD  CONSTRAINT [FK_Sale_Store] FOREIGN KEY([StoreId])
+REFERENCES [dbo].[Store] ([Id])
+GO
+ALTER TABLE [dbo].[Sale] CHECK CONSTRAINT [FK_Sale_Store]
+GO
+/****** Object:  StoredProcedure [dbo].[InsertProduct]    Script Date: 17/8/2024 09:00:03 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -138,3 +160,23 @@ values
 
 end
 GO
+/****** Object:  UserDefinedFunction [dbo].[GetPersonAge]    Script Date: 17/8/2024 09:04:28 ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE function [dbo].[GetPersonAge] (@DateOfBirth datetime)
+returns int
+as
+begin
+
+return( select DATEDIFF(year,@DateOfBirth,GETDATE()))
+/**** GETDATE() gets the current date when the function is executed ****/
+/**** DATEDIFF provides the difference between two dates, first argument "year" returns only that DATEPART ****/
+end 
+GO
+
+
